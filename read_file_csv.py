@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def read_file(path):
 
     list = np.loadtxt(open(path, "rb"), delimiter=",", skiprows=0)
@@ -17,7 +18,6 @@ def read_file(path):
         sensor[j, :] = sensor_cols
         j = j + 1
     return angle, sensor, time
-
 
 
 if __name__ == '__main__':

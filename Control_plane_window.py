@@ -133,11 +133,17 @@ class ControlPlane(QWidget):
         directory1 = QFileDialog.getExistingDirectory(self, "Open file", "./")
         path_data = directory1 + '/1.csv'
         path_video = directory1 + '/video.mp4'
+        if 'door' in directory1 or 'Door' in directory1:
+            model_type = 'door'
+        elif 'drawer' in directory1 or 'Drawer' in directory1:
+            model_type = 'drawer'
+        else:
+            model_type = 'None'
         self.angle, self.data, self.time = read_file(path_data)
         self.slid_button.setRange(0, len(self.time)-1)
         ControlPlane.sensor_window = ForceWindow(self.angle, self.data, self.time)
         ControlPlane.color_window = TDWindow(self.angle, self.data, self.time)
-        ControlPlane.th_window = THD_window(self.angle, self.data, self.time)
+        ControlPlane.th_window = THD_window(self.angle, self.data, self.time, model_type)
         ControlPlane.video_window = videoWindow(path_video)
 
     def buttonState(self):
@@ -262,6 +268,7 @@ class ControlPlane(QWidget):
         ControlPlane.sensor_window.draw(num=int(sen_num)-1, t=value)
         ControlPlane.color_window.draw(num=value)
         ControlPlane.th_window.widget.changecolor(num=value)
+        ControlPlane.th_window.widget.setDRotation(num=value)
 
     def update_func(self):
         num = self.sensor_num.text()
@@ -272,7 +279,7 @@ class ControlPlane(QWidget):
         ControlPlane.sensor_window.draw(num=int(sen_num)-1, t=self.step)
         ControlPlane.color_window.draw(num=self.step)
         ControlPlane.th_window.widget.changecolor(num=self.step)
-        # ControlPlane.th_window.widget.setDRotation(num=self.step)
+        ControlPlane.th_window.widget.setDRotation(num=self.step)
         ControlPlane.th_window.widget.setTranslate(num=self.step)
         if self.step < len(self.time)-1:
             self.step += 1

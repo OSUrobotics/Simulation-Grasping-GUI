@@ -4,16 +4,17 @@ from OpenGL.GLU import *
 from PyQt5.QtOpenGL import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-from read_file_csv import read_file
 from model_data import door_data, drawer_date
+from read_file_csv import read_file
+import numpy as np
 
 
 class THD_window(QWidget):
-    def __init__(self, angle, data, time):
+    def __init__(self, angle, data, time, model_tp):
         super(THD_window, self).__init__()
 
-        self.widget = glWidget(angle, data, time)
-        #self.setMinimumSize(640, 480)
+        self.widget = glWidget(angle, data, time, model_tp)
+        self.setMinimumSize(640, 480)
 
         self.xSlider = self.createVSlider()
         self.ySlider = self.createHSlider()
@@ -21,7 +22,6 @@ class THD_window(QWidget):
         self.xSlider.valueChanged.connect(self.widget.setXRotation)
         self.ySlider.valueChanged.connect(self.widget.setYRotation)
 
-        self.xSlider.setValue(360 * 16)
 
         mainLayout = QHBoxLayout()
         mainLayout.addWidget(self.xSlider)
@@ -38,8 +38,9 @@ class THD_window(QWidget):
 
     def createVSlider(self):
         slider = QSlider(Qt.Vertical)
-        slider.setRange(0, 360 * 16)
-        slider.setSingleStep(16)
+        slider.setRange(0, 180)
+        slider.setSingleStep(1)
+        slider.setValue(90)
         """slider.setPageStep(15 * 16)
         slider.setTickInterval(15 * 16)
         slider.setTickPosition(QSlider.TicksRight)"""
@@ -47,8 +48,9 @@ class THD_window(QWidget):
 
     def createHSlider(self):
         slider = QSlider(Qt.Horizontal)
-        slider.setRange(0, 360 * 16)
-        slider.setSingleStep(16)
+        slider.setRange(-90, 90)
+        slider.setSingleStep(1)
+        slider.setValue(-45)
         """slider.setPageStep(15 * 16)
         slider.setTickInterval(15 * 16)
         slider.setTickPosition(QSlider.TicksRight)"""
@@ -57,9 +59,9 @@ class THD_window(QWidget):
 
 class glWidget(QGLWidget):
 
-    def __init__(self, angle, data, time, parent=None):
+    def __init__(self, angle, data, time, model_tp, parent=None):
         QGLWidget.__init__(self, parent)
-        self.setMinimumSize(640, 480)
+        self.setMinimumSize(400, 300)
         self.xRot = 0
         self.yRot = 0
         self.zRot = 0
@@ -84,13 +86,12 @@ class glWidget(QGLWidget):
         self.data = angle
         self.sensor = data
         self.time = time
+        self.model_type = model_tp
         self.door_box_vertex = door_data(name='door_box_vertex')
         self.door_plate_vertex = door_data(name='door_plate_vertex')
         self.door_handle_vertex = door_data(name='door_handle_vertex')
         self.plate_sensor1_vertex = door_data(name='plate_sensor1_vertex')
         self.plate_sensor2_vertex = door_data(name='plate_sensor2_vertex')
-        self.plate_sensor3_vertex = door_data(name='plate_sensor3_vertex')
-        self.plate_sensor4_vertex = door_data(name='plate_sensor4_vertex')
         self.handle_sensor1_vertex = door_data(name='handle_sensor1_vertex')
         self.handle_sensor2_vertex = door_data(name='handle_sensor2_vertex')
         self.handle_sensor3_vertex = door_data(name='handle_sensor3_vertex')
@@ -159,17 +160,22 @@ class glWidget(QGLWidget):
         self.drawer_sensor11_face = drawer_date(name='drawer_sensor11_face')
         self.drawer_sensor12_face = drawer_date(name='drawer_sensor12_face')
 
+
     def setXRotation(self, angle):
-        angle = self.normalizeAngle(angle)
-        if angle != self.xRot:
-            self.xRot = -angle
-            self.updateGL()
+        """angle = self.normalizeAngle(angle)/16
+        if angle != self.xRot:"""
+        # self.xRot = angle/100
+        self.zRot = -3 * np.cos(angle * np.pi/180)
+        # self.yRot = np.sqrt(50 - np.square(self.xRot))
+        self.updateGL()
 
     def setYRotation(self, angle):
-        angle = self.normalizeAngle(angle)
-        if angle != self.yRot:
-            self.yRot = angle
-            self.updateGL()
+        """angle = self.normalizeAngle(angle)/16
+        if angle != self.yRot:"""
+        self.xRot = -1.5 + 3 * np.cos(angle * np.pi/180)
+        self.yRot = -1.5 - 3 * np.sin(angle * np.pi/180)
+        # self.xRot = np.sqrt(50 - np.square(self.yRot))
+        self.updateGL()
 
     """def setZRotation(self, angle):
         angle = self.normalizeAngle(angle)
@@ -185,12 +191,12 @@ class glWidget(QGLWidget):
         self.dist = self.data[num]/100
         self.updateGL()
 
-    def normalizeAngle(self, angle):
+    """def normalizeAngle(self, angle):
         while angle < 0:
             angle += 360 * 16
         while angle > 360 * 16:
             angle -= 360 * 16
-        return angle
+        return angle"""
 
     def get_data(self, sensor_num):
         time_data = []
@@ -203,7 +209,7 @@ class glWidget(QGLWidget):
         y = data[num, 0:13]
         s_color = []
         for i in y:
-            i = i * 204.8
+            i = i * 512
             if 0 <= i <= 255:
                 force_color = [0, i / 255, 1]
             elif 256 <= i <= 511:
@@ -247,22 +253,6 @@ class glWidget(QGLWidget):
                 glVertex3fv(self.door_box_vertex[vertex])
         glEnd()
 
-        # Door plate
-        glRotated(self.dRot, 0.0, 0.0, 1.0)
-        glBegin(GL_QUADS)
-        glColor3fv((0.75, 0.7, 0.7))
-        for face in self.door_plate_face:
-            for vertex in face:
-                glVertex3fv(self.door_plate_vertex[vertex])
-        glEnd()
-
-        glBegin(GL_LINES)
-        glColor3fv((0, 0, 0))
-        for edge in self.door_plate_edges:
-            for vertex in edge:
-                glVertex3fv(self.door_plate_vertex[vertex])
-        glEnd()
-
         # Door plate sensor
         glBegin(GL_TRIANGLES)
         glColor3fv(self.color_13)
@@ -278,7 +268,25 @@ class glWidget(QGLWidget):
                 glVertex3fv(self.plate_sensor2_vertex[vertex])
         glEnd()
 
-        glBegin(GL_TRIANGLES)
+        # Door plate
+        # glTranslate(self.dist, 0, 0)
+        glRotated(self.dRot, 0.0, 0.0, 1.0)
+
+        glBegin(GL_QUADS)
+        glColor3fv((0.75, 0.7, 0.7))
+        for face in self.door_plate_face:
+            for vertex in face:
+                glVertex3fv(self.door_plate_vertex[vertex])
+        glEnd()
+
+        glBegin(GL_LINES)
+        glColor3fv((0, 0, 0))
+        for edge in self.door_plate_edges:
+            for vertex in edge:
+                glVertex3fv(self.door_plate_vertex[vertex])
+        glEnd()
+
+        """glBegin(GL_TRIANGLES)
         glColor3fv(self.color_15)
         for face in self.plate_sensor3_face:
             for vertex in face:
@@ -290,7 +298,7 @@ class glWidget(QGLWidget):
         for face in self.plate_sensor4_face:
             for vertex in face:
                 glVertex3fv(self.plate_sensor4_vertex[vertex])
-        glEnd()
+        glEnd()"""
 
         # Handle
         glBegin(GL_TRIANGLES)
@@ -501,18 +509,21 @@ class glWidget(QGLWidget):
 
         glLoadIdentity()
         # Set the camera view
-        glTranslatef(-2, 0.0, -15.0)
+        glTranslatef(0.0, 0.0, -10.0)
         glPolygonMode(GL_FRONT, GL_FILL)
         # Rotate model by slider bar
-        glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
-        glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
+        gluLookAt(self.xRot, self.zRot, self.yRot, -1.5, 0, -1.5, 0, 1, 0)
+        """glRotatef(, 1.0, 0.0, 0.0)
+        glRotatef(self.yRot / 16.0, 0.0, 10.0, 0.0)"""
 
         # Rotate model to the front view
-        glRotatef(-120, 0, 1, 0)
+        glRotatef(0, 0, 1, 0)
         glRotatef(270, 1, 0, 0)
 
-        # self.paintdoor()
-        self.paintdrawer()
+        if self.model_type == 'door':
+            self.paintdoor()
+        elif self.model_type == 'drawer':
+            self.paintdrawer()
 
         glFlush()
 
@@ -528,12 +539,16 @@ class glWidget(QGLWidget):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         # glOrtho(-5, 5, 5, -5, 4.0, 7.0)
-        gluPerspective(45.0, w/h, 0.1, 50.0)
+        gluPerspective(45.0, w/h, 0.1, 100.0)
+
         glMatrixMode(GL_MODELVIEW)
 
 
 if __name__ == '__main__':
+
+    angle, data, time = read_file('C:/Users/Haonan Yuan/Documents/Oregon state University/Python_workspace/Interface_door_PyQT/Door/1.csv')
     app = QApplication(sys.argv)
-    viewer = THD_window()
+
+    viewer = THD_window(angle, data, time)
     viewer.show()
     sys.exit(app.exec_())

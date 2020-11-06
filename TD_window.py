@@ -3,9 +3,8 @@ import sys
 from PyQt5.QtWidgets import *
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-
-from read_file_csv import read_file
-from numpy import cos, sin, pi
+import matplotlib as mpl
+from numpy import cos, sin, pi, linspace
 
 
 class TDWindow(QWidget):
@@ -39,33 +38,33 @@ class TDWindow(QWidget):
         ax = self.figure.add_subplot(111)
         angles_circle = [j * pi / 180 for j in range(0, 360)]
         r = 0.635
-        sensor1_x = r * cos(angles_circle) - 2.9
-        sensor1_y = r * sin(angles_circle) + 3.429
+        sensor6_x = r * cos(angles_circle) - 2.9
+        sensor6_y = r * sin(angles_circle) + 3.429
         sensor2_x = r * cos(angles_circle) - 0.635
         sensor2_y = r * sin(angles_circle) + 3.429
-        sensor3_x = r * cos(angles_circle) + 1.6256
-        sensor3_y = r * sin(angles_circle) + 3.429
+        sensor9_x = r * cos(angles_circle) + 1.6256
+        sensor9_y = r * sin(angles_circle) + 3.429
 
-        sensor4_x = r * cos(angles_circle) - 1.6256
-        sensor4_y = r * sin(angles_circle) + 1.6256
-        sensor5_x = r * cos(angles_circle) + 0.635
-        sensor5_y = r * sin(angles_circle) + 1.6256
-        sensor6_x = r * cos(angles_circle) + 2.9
-        sensor6_y = r * sin(angles_circle) + 1.6256
+        sensor8_x = r * cos(angles_circle) - 1.6256
+        sensor8_y = r * sin(angles_circle) + 1.6256
+        sensor1_x = r * cos(angles_circle) + 0.635
+        sensor1_y = r * sin(angles_circle) + 1.6256
+        sensor10_x = r * cos(angles_circle) + 2.9
+        sensor10_y = r * sin(angles_circle) + 1.6256
 
         sensor7_x = r * cos(angles_circle) - 1.6256
         sensor7_y = r * sin(angles_circle) - 1.6256
-        sensor8_x = r * cos(angles_circle) + 0.635
-        sensor8_y = r * sin(angles_circle) - 1.6256
-        sensor9_x = r * cos(angles_circle) + 2.9
-        sensor9_y = r * sin(angles_circle) - 1.6256
+        sensor4_x = r * cos(angles_circle) + 0.635
+        sensor4_y = r * sin(angles_circle) - 1.6256
+        sensor11_x = r * cos(angles_circle) + 2.9
+        sensor11_y = r * sin(angles_circle) - 1.6256
 
-        sensor10_x = r * cos(angles_circle) - 2.9
-        sensor10_y = r * sin(angles_circle) - 3.429
-        sensor11_x = r * cos(angles_circle) - 0.635
-        sensor11_y = r * sin(angles_circle) - 3.429
-        sensor12_x = r * cos(angles_circle) + 1.626
+        sensor5_x = r * cos(angles_circle) - 2.9
+        sensor5_y = r * sin(angles_circle) - 3.429
+        sensor12_x = r * cos(angles_circle) - 0.635
         sensor12_y = r * sin(angles_circle) - 3.429
+        sensor3_x = r * cos(angles_circle) + 1.626
+        sensor3_y = r * sin(angles_circle) - 3.429
 
         """sensor13_x = r * cos(angles_circle) - 8
         sensor13_y = r * sin(angles_circle) + 10
@@ -77,17 +76,29 @@ class TDWindow(QWidget):
         sensor16_y = r * sin(angles_circle) - 10"""
 
         ax.plot(sensor1_x, sensor1_y, color=(0, 0, 0))
+        ax.text(-3.15, 3.179, '6', fontsize=24, color='black')
         ax.plot(sensor2_x, sensor2_y, color=(0, 0, 0))
+        ax.text(-0.885, 3.179, '2', fontsize=24, color='black')
         ax.plot(sensor3_x, sensor3_y, color=(0, 0, 0))
+        ax.text(1.3756, 3.179, '9', fontsize=24, color='black')
         ax.plot(sensor4_x, sensor4_y, color=(0, 0, 0))
+        ax.text(-1.8756, 1.3756, '8', fontsize=24, color='black')
         ax.plot(sensor5_x, sensor5_y, color=(0, 0, 0))
+        ax.text(0.385, 1.3756, '1', fontsize=24, color='black')
         ax.plot(sensor6_x, sensor6_y, color=(0, 0, 0))
+        ax.text(2.4, 1.3756, '10', fontsize=24, color='black')
         ax.plot(sensor7_x, sensor7_y, color=(0, 0, 0))
+        ax.text(- 1.8756, -1.8756, '7', fontsize=24, color='black')
         ax.plot(sensor8_x, sensor8_y, color=(0, 0, 0))
+        ax.text(0.385, -1.8756, '4', fontsize=24, color='black')
         ax.plot(sensor9_x, sensor9_y, color=(0, 0, 0))
+        ax.text(2.4, -1.8756, '11', fontsize=24, color='black')
         ax.plot(sensor10_x, sensor10_y, color=(0, 0, 0))
+        ax.text(- 3.15, - 3.679, '5', fontsize=24, color='black')
         ax.plot(sensor11_x, sensor11_y, color=(0, 0, 0))
+        ax.text(- 1.135, - 3.679, '12', fontsize=24, color='black')
         ax.plot(sensor12_x, sensor12_y, color=(0, 0, 0))
+        ax.text(1.376, - 3.679, '3', fontsize=24, color='black')
         """ax.plot(sensor13_x, sensor13_y, color=(0, 0, 0))
         ax.plot(sensor14_x, sensor14_y, color=(0, 0, 0))
         ax.plot(sensor15_x, sensor15_y, color=(0, 0, 0))
@@ -129,6 +140,21 @@ class TDWindow(QWidget):
 
         ax.set_title('Color_map: Sensor')
         ax.axis('equal')
+        ax.set_xticks([])
+        ax.set_yticks([])
+        cmap = mpl.cm.Spectral_r
+        ax3 = self.figure.add_axes([0.77, 0.15, 0.05, 0.7])
+        norm = mpl.colors.Normalize(vmin=0, vmax=2)
+        bounds = [round(elem, 2) for elem in linspace(0, 2, 14)]
+        cb3 = mpl.colorbar.ColorbarBase(ax3, cmap=cmap,
+                                        norm=norm,
+                                        # to use 'extend', you must
+                                        # specify two extra boundaries:
+                                        boundaries=[0] + bounds + [5],
+                                        extend='both',
+                                        ticks=bounds,  # optional
+                                        spacing='proportional',
+                                        orientation='vertical')
         self.display.draw()
 
     def get_color(self, data, num):
@@ -136,16 +162,19 @@ class TDWindow(QWidget):
         y = data[num, 0:13]
         s_color = []
         for i in y:
-            i = i * 204.8
+            i = i * 512
             if 0 <= i <= 255:
                 force_color = [0, i / 255, 1]
+                s_color.append(force_color)
             elif 256 <= i <= 511:
                 force_color = [0, 1, (511 - i) / 255]
+                s_color.append(force_color)
             elif 512 <= i <= 767:
                 force_color = [(i - 512) / 255, 1, 0]
+                s_color.append(force_color)
             elif 768 <= i <= 1023:
                 force_color = [1, (1023 - i) / 255, 0]
-            s_color.append(force_color)
+                s_color.append(force_color)
         return s_color
 
 
