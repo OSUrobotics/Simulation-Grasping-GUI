@@ -1,5 +1,6 @@
 import sys
 import re
+import os
 
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -9,7 +10,15 @@ from read_file_csv import read_file
 from Force_graph_window import ForceWindow
 from TD_window import TDWindow
 from THD_window import THD_window
-from Video_window import videoWindow
+from Video_window import video_window
+
+
+def createSlider():
+
+    slider = QSlider(Qt.Horizontal)
+    slider.setRange(0, 360 * 16)
+    slider.setSingleStep(16)
+    return slider
 
 
 class ControlPlane(QWidget):
@@ -33,6 +42,7 @@ class ControlPlane(QWidget):
         self.angle = []
         self.time = []
         self.data = []
+        self.range = 0
 
         self.step = 0
         self.timer = QTimer()
@@ -70,9 +80,9 @@ class ControlPlane(QWidget):
         self.slid_button.valueChanged.connect(self.value)
         left_side_layout.addWidget(self.slid_button)
 
-        self.d_label = QLabel('Rotate Plate: ' + '0.000 ' + 'Degree')
-        self.d_label.setAlignment(Qt.AlignCenter)
-        left_side_layout.addWidget(self.d_label)
+        self.r_label = QLabel('Rotate Plate: ' + '0.000 ' + 'Degrees')
+        self.r_label.setAlignment(Qt.AlignCenter)
+        left_side_layout.addWidget(self.r_label)
 
         self.ds_label = QLabel('Distance: ' + '0.000 ' + 'mm')
         self.ds_label.setAlignment(Qt.AlignCenter)
@@ -107,10 +117,6 @@ class ControlPlane(QWidget):
         self.button13.toggled.connect(self.buttonState)
         self.button14 = QRadioButton('Sensor_14')
         self.button14.toggled.connect(self.buttonState)
-        self.button15 = QRadioButton('Sensor_15')
-        self.button15.toggled.connect(self.buttonState)
-        self.button16 = QRadioButton('Sensor_16')
-        self.button16.toggled.connect(self.buttonState)
 
         right_side_layout.addWidget(self.button1)
         right_side_layout.addWidget(self.button2)
@@ -126,25 +132,24 @@ class ControlPlane(QWidget):
         right_side_layout.addWidget(self.button12)
         right_side_layout.addWidget(self.button13)
         right_side_layout.addWidget(self.button14)
-        right_side_layout.addWidget(self.button15)
-        right_side_layout.addWidget(self.button16)
 
     def open_file(self):
         directory1 = QFileDialog.getExistingDirectory(self, "Open file", "./")
-        path_data = directory1 + '/1.csv'
-        path_video = directory1 + '/video.mp4'
+        files = os.listdir(directory1)
+        path_data = directory1 + '/' + files[0]
+        path_video = directory1 + '/' + files[1]
         if 'door' in directory1 or 'Door' in directory1:
-            model_type = 'door'
+            self.model_type = 'door'
         elif 'drawer' in directory1 or 'Drawer' in directory1:
-            model_type = 'drawer'
+            self.model_type = 'drawer'
         else:
             model_type = 'None'
-        self.angle, self.data, self.time = read_file(path_data)
-        self.slid_button.setRange(0, len(self.time)-1)
+        self.angle, self.data, self.time = read_file(path_data, self.model_type)
+        self.slid_button.setRange(0, len(self.time) - 1)
         ControlPlane.sensor_window = ForceWindow(self.angle, self.data, self.time)
-        ControlPlane.color_window = TDWindow(self.angle, self.data, self.time)
-        ControlPlane.th_window = THD_window(self.angle, self.data, self.time, model_type)
-        ControlPlane.video_window = videoWindow(path_video)
+        ControlPlane.color_window = TDWindow(self.angle, self.data, self.time, self.model_type)
+        ControlPlane.th_window = THD_window(self.angle, self.data, self.time, self.model_type)
+        ControlPlane.video_window = video_window(path_video)
 
     def buttonState(self):
 
@@ -152,7 +157,7 @@ class ControlPlane(QWidget):
         if radioButton.text() == 'Sensor_1':
             if radioButton.isChecked():
                 num = 0
-                self.sensor_num.setText('{0}: {1}'.format('Sensor', str(num+1)))
+                self.sensor_num.setText('{0}: {1}'.format('Sensor', str(num + 1)))
                 ControlPlane.sensor_window.draw(num=0)
                 ControlPlane.color_window.draw(num=0)
         elif radioButton.text() == 'Sensor_2':
@@ -233,42 +238,26 @@ class ControlPlane(QWidget):
                 self.sensor_num.setText('{0}: {1}'.format('Sensor', str(num + 1)))
                 ControlPlane.sensor_window.draw(num=13)
                 ControlPlane.color_window.draw(num=0)
-        elif radioButton.text() == 'Sensor_15':
-            if radioButton.isChecked():
-                num = 14
-                self.sensor_num.setText('{0}: {1}'.format('Sensor', str(num + 1)))
-                ControlPlane.sensor_window.draw(num=14)
-                ControlPlane.color_window.draw(num=0)
-        elif radioButton.text() == 'Sensor_16':
-            if radioButton.isChecked():
-                num = 15
-                self.sensor_num.setText('{0}: {1}'.format('Sensor', str(num + 1)))
-                ControlPlane.sensor_window.draw(num=15)
-                ControlPlane.color_window.draw(num=0)
-
-    def createSlider(self):
-
-        slider = QSlider(Qt.Horizontal)
-
-        slider.setRange(0, 360 * 16)
-        slider.setSingleStep(16)
-        """slider.setPageStep(15 * 16)
-        slider.setTickInterval(15 * 16)
-        slider.setTickPosition(QSlider.TicksRight)"""
-        return slider
 
     def value(self):
         """Return the current value of the slider"""
         num = self.sensor_num.text()
         sen_num = re.sub(r'Sensor: ', '', num)
         value = self.slid_button.value()
-        time_value, force_value = self.data_update(value, int(sen_num)-1)
+        time_value, force_value = self.data_update(value, int(sen_num) - 1)
         self.t_label.setText('{0}: {1:.3f} {2}'.format('Time', time_value, 'Sec'))
         self.f_label.setText('{0}: {1:.3f} {2}'.format('Force', force_value, 'N'))
-        ControlPlane.sensor_window.draw(num=int(sen_num)-1, t=value)
+        if self.model_type == 'drawer':
+            self.ds_label.setText('{0}: {1:.3f} {2}'.format('Distance', self.angle[value], 'mm'))
+            ControlPlane.th_window.widget.setTranslate(num=value)
+        else:
+            self.r_label.setText('{0}: {1:.3f} {2}'.format('Rotate Plate', self.angle[value], 'Degrees'))
+            ControlPlane.th_window.widget.setDRotation(num=value)
+        ControlPlane.sensor_window.draw(num=int(sen_num) - 1, t=value)
         ControlPlane.color_window.draw(num=value)
         ControlPlane.th_window.widget.changecolor(num=value)
-        ControlPlane.th_window.widget.setDRotation(num=value)
+
+        ControlPlane.video_window.play_video(step=value)
 
     def update_func(self):
         num = self.sensor_num.text()
@@ -276,12 +265,17 @@ class ControlPlane(QWidget):
         time_value, force_value = self.data_update(self.step, int(sen_num) - 1)
         self.t_label.setText('{0}: {1:.3f} {2}'.format('Time', time_value, 'Sec'))
         self.f_label.setText('{0}: {1:.3f} {2}'.format('Force', force_value, 'N'))
-        ControlPlane.sensor_window.draw(num=int(sen_num)-1, t=self.step)
+        if self.model_type == 'drawer':
+            self.ds_label.setText('{0}: {1:.3f} {2}'.format('Distance', self.angle[self.step], 'mm'))
+        else:
+            self.r_label.setText('{0}: {1:.3f} {2}'.format('Rotate Plate', self.angle[self.step], 'Degrees'))
+        ControlPlane.sensor_window.draw(num=int(sen_num) - 1, t=self.step)
         ControlPlane.color_window.draw(num=self.step)
         ControlPlane.th_window.widget.changecolor(num=self.step)
         ControlPlane.th_window.widget.setDRotation(num=self.step)
         ControlPlane.th_window.widget.setTranslate(num=self.step)
-        if self.step < len(self.time)-1:
+        ControlPlane.video_window.play_video(step=self.step)
+        if self.step < len(self.time) - 1:
             self.step += 1
         else:
             self.step = 0
@@ -289,12 +283,11 @@ class ControlPlane(QWidget):
     def start_stop_func(self):
         if not self.timer.isActive():
             self.buttonstart.setText('Stop')
-            self.timer.start(20)
-            ControlPlane.video_window.play_video(state='start')
+            # platrate = int(1000 / 60)
+            self.timer.start(16)
         else:
             self.buttonstart.setText('Start')
             self.timer.stop()
-            ControlPlane.video_window.play_video(state='pause')
 
     def show_thdmodel(self):
         ControlPlane.video_window.show()
@@ -310,6 +303,7 @@ class ControlPlane(QWidget):
         for i in range(len(self.time)):
             time_data.append(i)
         force_data = self.data[:, sensor_num] * 0.097656
+
         return time_data, force_data
 
 

@@ -9,19 +9,35 @@ from read_file_csv import read_file
 import numpy as np
 
 
+def createVSlider():
+    slider = QSlider(Qt.Vertical)
+    slider.setRange(0, 180)
+    slider.setSingleStep(1)
+    slider.setValue(90)
+    return slider
+
+
+def createHSlider():
+    slider = QSlider(Qt.Horizontal)
+    slider.setRange(-90, 90)
+    slider.setSingleStep(1)
+    slider.setValue(-45)
+    return slider
+
+
 class THD_window(QWidget):
     def __init__(self, angle, data, time, model_tp):
         super(THD_window, self).__init__()
 
         self.widget = glWidget(angle, data, time, model_tp)
-        self.setMinimumSize(640, 480)
+        self.setMinimumSize(500, 375)
+        self.move(1200, 550)
 
-        self.xSlider = self.createVSlider()
-        self.ySlider = self.createHSlider()
+        self.xSlider = createVSlider()
+        self.ySlider = createHSlider()
 
         self.xSlider.valueChanged.connect(self.widget.setXRotation)
         self.ySlider.valueChanged.connect(self.widget.setYRotation)
-
 
         mainLayout = QHBoxLayout()
         mainLayout.addWidget(self.xSlider)
@@ -35,26 +51,6 @@ class THD_window(QWidget):
         self.setWindowTitle("Door Model")
 
         self.widget.updateGL()
-
-    def createVSlider(self):
-        slider = QSlider(Qt.Vertical)
-        slider.setRange(0, 180)
-        slider.setSingleStep(1)
-        slider.setValue(90)
-        """slider.setPageStep(15 * 16)
-        slider.setTickInterval(15 * 16)
-        slider.setTickPosition(QSlider.TicksRight)"""
-        return slider
-
-    def createHSlider(self):
-        slider = QSlider(Qt.Horizontal)
-        slider.setRange(-90, 90)
-        slider.setSingleStep(1)
-        slider.setValue(-45)
-        """slider.setPageStep(15 * 16)
-        slider.setTickInterval(15 * 16)
-        slider.setTickPosition(QSlider.TicksRight)"""
-        return slider
 
 
 class glWidget(QGLWidget):
@@ -130,8 +126,6 @@ class glWidget(QGLWidget):
         self.door_handle_face = door_data(name='door_handle_face')
         self.plate_sensor1_face = door_data(name='plate_sensor1_face')
         self.plate_sensor2_face = door_data(name='plate_sensor2_face')
-        self.plate_sensor3_face = door_data(name='plate_sensor3_face')
-        self.plate_sensor4_face = door_data(name='plate_sensor4_face')
         self.handle_sensor1_face = door_data(name='handle_sensor1_face')
         self.handle_sensor2_face = door_data(name='handle_sensor2_face')
         self.handle_sensor3_face = door_data(name='handle_sensor3_face')
@@ -160,7 +154,6 @@ class glWidget(QGLWidget):
         self.drawer_sensor11_face = drawer_date(name='drawer_sensor11_face')
         self.drawer_sensor12_face = drawer_date(name='drawer_sensor12_face')
 
-
     def setXRotation(self, angle):
         """angle = self.normalizeAngle(angle)/16
         if angle != self.xRot:"""
@@ -177,12 +170,6 @@ class glWidget(QGLWidget):
         # self.xRot = np.sqrt(50 - np.square(self.yRot))
         self.updateGL()
 
-    """def setZRotation(self, angle):
-        angle = self.normalizeAngle(angle)
-        if angle != self.zRot:
-            self.zRot = angle
-            self.updateGL()"""
-
     def setDRotation(self, num):
         self.dRot = -self.data[num]
         self.updateGL()
@@ -191,25 +178,18 @@ class glWidget(QGLWidget):
         self.dist = self.data[num]/100
         self.updateGL()
 
-    """def normalizeAngle(self, angle):
-        while angle < 0:
-            angle += 360 * 16
-        while angle > 360 * 16:
-            angle -= 360 * 16
-        return angle"""
-
     def get_data(self, sensor_num):
         time_data = []
         for i in range(len(self.time)):
             time_data.append(i)
-        force_data = self.sensor[:, sensor_num] * 0.097656
+        force_data = self.sensor[:, sensor_num] * (100/1024)
         return time_data, force_data
 
     def get_color(self, data, num):
-        y = data[num, 0:13]
+        y = data[num, 0:14]
         s_color = []
         for i in y:
-            i = i * 512
+            i = i
             if 0 <= i <= 255:
                 force_color = [0, i / 255, 1]
             elif 256 <= i <= 511:
@@ -234,6 +214,9 @@ class glWidget(QGLWidget):
         self.color_10 = self.get_color(self.sensor, num)[9]
         self.color_11 = self.get_color(self.sensor, num)[10]
         self.color_12 = self.get_color(self.sensor, num)[11]
+        if self.model_type == 'door':
+            self.color_13 = self.get_color(self.sensor, num)[12]
+            self.color_14 = self.get_color(self.sensor, num)[13]
         self.updateGL()
 
     def paintdoor(self):
@@ -285,20 +268,6 @@ class glWidget(QGLWidget):
             for vertex in edge:
                 glVertex3fv(self.door_plate_vertex[vertex])
         glEnd()
-
-        """glBegin(GL_TRIANGLES)
-        glColor3fv(self.color_15)
-        for face in self.plate_sensor3_face:
-            for vertex in face:
-                glVertex3fv(self.plate_sensor3_vertex[vertex])
-        glEnd()
-
-        glBegin(GL_TRIANGLES)
-        glColor3fv(self.color_16)
-        for face in self.plate_sensor4_face:
-            for vertex in face:
-                glVertex3fv(self.plate_sensor4_vertex[vertex])
-        glEnd()"""
 
         # Handle
         glBegin(GL_TRIANGLES)
@@ -513,8 +482,6 @@ class glWidget(QGLWidget):
         glPolygonMode(GL_FRONT, GL_FILL)
         # Rotate model by slider bar
         gluLookAt(self.xRot, self.zRot, self.yRot, -1.5, 0, -1.5, 0, 1, 0)
-        """glRotatef(, 1.0, 0.0, 0.0)
-        glRotatef(self.yRot / 16.0, 0.0, 10.0, 0.0)"""
 
         # Rotate model to the front view
         glRotatef(0, 0, 1, 0)

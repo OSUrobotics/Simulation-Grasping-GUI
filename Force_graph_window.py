@@ -12,10 +12,10 @@ class ForceWindow(QWidget):
         self.sensor = data
         self.time = time
 
-        self.move(550, 300)
+        self.move(550, 100)
 
         self.setWindowTitle('Force_Graph: Sensor')
-        self.resize(640, 480)
+        self.resize(500, 375)
         # The display for the graph
         self.figure = Figure()
         self.display = FigureCanvas(self.figure)
@@ -41,6 +41,7 @@ class ForceWindow(QWidget):
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         time, force = self.get_data(num)
+        force = force * 100 / 1024
         ax.plot(time, force)
         ax.plot(time[t], force[t], 'ro')
         ax.set_title('Force_Graph: Sensor ' + str(num + 1))
