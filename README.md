@@ -1,4 +1,4 @@
-# Simulation-Grasping-GUI
+# Data visualization for Grasping
 
 
 	1.Control_plane_window.py: The main file and create the control plane in this file.
